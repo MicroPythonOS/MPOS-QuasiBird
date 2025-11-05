@@ -4,6 +4,7 @@ import random
 
 from mpos.apps import Activity
 import mpos.ui
+import mpos.config
 
 
 class Pipe:
@@ -73,6 +74,12 @@ class QuasiBird(Activity):
 
     def onCreate(self):
         print("Quasi Bird starting...")
+
+        # Load highscore from persistent storage
+        print("Loading preferences...")
+        prefs = mpos.config.SharedPreferences("com.quasikili.quasibird")
+        self.highscore = prefs.get_int("highscore", 0)
+        print(f"Loaded highscore: {self.highscore}")
 
         self.screen = lv.obj()
         self.screen.set_style_bg_color(lv.color_hex(0x87CEEB), 0)  # Sky blue
@@ -434,6 +441,12 @@ class QuasiBird(Activity):
                         self.update_ui_threadsafe_if_foreground(
                             self.highscore_label.center
                         )
+
+                        # Save new highscore to persistent storage
+                        print(f"New highscore: {self.highscore}! Saving...")
+                        editor = mpos.config.SharedPreferences("com.quasikili.quasibird").edit()
+                        editor.put_int("highscore", self.highscore)
+                        editor.commit()
 
                     self.update_ui_threadsafe_if_foreground(
                         self.game_over_label.remove_flag, lv.obj.FLAG.HIDDEN
