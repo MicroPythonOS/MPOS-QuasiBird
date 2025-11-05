@@ -57,12 +57,14 @@ class QuasiBird(Activity):
     score_label = None
     game_over_label = None
     start_label = None
+    fps_buffer = [0]  # To store the latest FPS value
 
     def onCreate(self):
         print("Quasi Bird starting...")
 
         self.screen = lv.obj()
         self.screen.set_style_bg_color(lv.color_hex(0x87CEEB), 0)  # Sky blue
+        self.screen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
         # Make screen focusable for keyboard input
         focusgroup = lv.group_get_default()
@@ -129,6 +131,8 @@ class QuasiBird(Activity):
 
     def onResume(self, screen):
         super().onResume(screen)
+
+        lv.log_register_print_cb(self.log_callback)
         self.running = True
         try:
             _thread.stack_size(mpos.apps.good_stack_size())
@@ -336,3 +340,20 @@ class QuasiBird(Activity):
 
             # Control frame rate (target ~30 FPS, but physics are framerate-independent)
             time.sleep_ms(33)
+
+    # Custom log callback to capture FPS
+    def log_callback(self, level, log_str):
+        # Convert log_str to string if it's a bytes object
+        log_str = log_str.decode() if isinstance(log_str, bytes) else log_str
+        # Optional: Print for debugging
+        # print(f"Level: {level}, Log: {log_str}")
+        # Log message format: "sysmon: 25 FPS (refr_cnt: 8 | redraw_cnt: 1), ..."
+        if "sysmon:" in log_str and "FPS" in log_str:
+            try:
+                # Extract FPS value (e.g., "25" from "sysmon: 25 FPS ...")
+                fps_part = log_str.split("FPS")[0].split("sysmon:")[1].strip()
+                fps = int(fps_part)
+                print("Current FPS:", fps)
+                self.fps_buffer[0] = fps
+            except (IndexError, ValueError):
+                pass
