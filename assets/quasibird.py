@@ -48,6 +48,7 @@ class QuasiBird(Activity):
 
     # Game state
     score = 0
+    highscore = 0
     game_over = False
     game_started = False
     running = False
@@ -63,6 +64,9 @@ class QuasiBird(Activity):
     ground_img = None
     ground_x = 0
     score_label = None
+    score_bg = None
+    highscore_label = None
+    highscore_bg = None
     game_over_label = None
     start_label = None
     fps_buffer = [0]  # To store the latest FPS value
@@ -137,12 +141,39 @@ class QuasiBird(Activity):
                 {"top": top_pipe, "bottom": bottom_pipe, "in_use": False}
             )
 
-        # Create score label
-        self.score_label = lv.label(self.screen)
+        # Create score display (top right, with frame background)
+        self.score_bg = lv.obj(self.screen)
+        self.score_bg.set_size(80, 50)
+        self.score_bg.set_style_bg_color(lv.color_hex(0x000000), 0)  # Black background
+        self.score_bg.set_style_bg_opa(180, 0)  # Semi-transparent
+        self.score_bg.set_style_border_color(lv.color_hex(0xFFFFFF), 0)  # White border
+        self.score_bg.set_style_border_width(2, 0)
+        self.score_bg.set_style_radius(8, 0)  # Rounded corners
+        self.score_bg.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)  # Disable scrollbar
+        self.score_bg.align(lv.ALIGN.TOP_RIGHT, -10, 10)
+
+        self.score_label = lv.label(self.score_bg)
         self.score_label.set_text("0")
         self.score_label.set_style_text_font(lv.font_montserrat_32, 0)
         self.score_label.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
-        self.score_label.align(lv.ALIGN.TOP_MID, 0, 10)
+        self.score_label.center()
+
+        # Create highscore display (top left, with frame background)
+        self.highscore_bg = lv.obj(self.screen)
+        self.highscore_bg.set_size(90, 50)
+        self.highscore_bg.set_style_bg_color(lv.color_hex(0x000000), 0)  # Black background
+        self.highscore_bg.set_style_bg_opa(180, 0)  # Semi-transparent
+        self.highscore_bg.set_style_border_color(lv.color_hex(0xFFD700), 0)  # Gold border
+        self.highscore_bg.set_style_border_width(2, 0)
+        self.highscore_bg.set_style_radius(8, 0)  # Rounded corners
+        self.highscore_bg.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)  # Disable scrollbar
+        self.highscore_bg.align(lv.ALIGN.TOP_LEFT, 10, 10)
+
+        self.highscore_label = lv.label(self.highscore_bg)
+        self.highscore_label.set_text(f"Hi:{self.highscore}")
+        self.highscore_label.set_style_text_font(lv.font_montserrat_20, 0)
+        self.highscore_label.set_style_text_color(lv.color_hex(0xFFD700), 0)  # Gold text
+        self.highscore_label.center()
 
         # Create start instruction label
         self.start_label = lv.label(self.screen)
@@ -203,6 +234,9 @@ class QuasiBird(Activity):
         self.game_started = True
         self.game_over = False
         self.score = 0
+        self.update_ui_threadsafe_if_foreground(
+            self.score_label.set_text, str(self.score)
+        )
         self.bird_y = self.SCREEN_HEIGHT / 2
         self.bird_velocity = 0
         self.pipes = []
@@ -356,6 +390,9 @@ class QuasiBird(Activity):
                         self.update_ui_threadsafe_if_foreground(
                             self.score_label.set_text, str(self.score)
                         )
+                        self.update_ui_threadsafe_if_foreground(
+                            self.score_label.center
+                        )
 
                 # Remove off-screen pipes and spawn new ones
                 if self.pipes and self.pipes[0].x < -self.pipes[0].width:
@@ -386,6 +423,18 @@ class QuasiBird(Activity):
                 # Check collision
                 if self.check_collision():
                     self.game_over = True
+
+                    # Update highscore if beaten
+                    if self.score > self.highscore:
+                        self.highscore = self.score
+                        self.score = 0  # Reset score to avoid confusion
+                        self.update_ui_threadsafe_if_foreground(
+                            self.highscore_label.set_text, f"Hi:{self.highscore}"
+                        )
+                        self.update_ui_threadsafe_if_foreground(
+                            self.highscore_label.center
+                        )
+
                     self.update_ui_threadsafe_if_foreground(
                         self.game_over_label.remove_flag, lv.obj.FLAG.HIDDEN
                     )
