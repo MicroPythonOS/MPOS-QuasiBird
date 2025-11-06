@@ -6,6 +6,12 @@ from mpos.apps import Activity
 import mpos.ui
 import mpos.config
 
+try:
+    import lvgl as lv # pyright: ignore[reportMissingModuleSource]
+except ImportError:
+    pass  # lv is already available as a global in MicroPython OS
+
+
 
 class Pipe:
     """Represents a single pipe obstacle"""
