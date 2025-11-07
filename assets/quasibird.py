@@ -57,7 +57,7 @@ class QuasiBird(Activity):
     game_over = False
     game_started = False
     is_fire_bird = False  # Track if we're using the fire bird
-    show_fps = False
+    show_fps = 0 # 0 means off, 1 means current, 2 means average
 
     # Timing for framerate independence
     last_time = 0
@@ -75,6 +75,7 @@ class QuasiBird(Activity):
     highscore_bg = None
     game_over_label = None
     start_label = None
+    avg_fps = 0
     last_fps = 0  # To store the latest FPS value
     fps_label = None
     fps_bg = None
@@ -189,7 +190,7 @@ class QuasiBird(Activity):
 
         # Create FPS  display (bottom left, with frame background)
         self.fps_bg = lv.obj(self.screen)
-        self.fps_bg.set_size(55, 20)
+        self.fps_bg.set_size(65, 20)
         self.fps_bg.set_style_bg_color(lv.color_hex(0x000000), 0)  # Black background
         self.fps_bg.set_style_bg_opa(180, 0)  # Semi-transparent
         self.fps_bg.set_style_border_color(lv.color_hex(0xFFFFFF), 0)  # White border
@@ -251,8 +252,10 @@ class QuasiBird(Activity):
             else:
                 self.flap()
         elif key == ord("B") or key == ord("b"):
-            self.show_fps = not self.show_fps
-            if self.show_fps:
+            self.show_fps += 1
+            if self.show_fps > 2:
+                self.show_fps = 0
+            if self.show_fps > 0:
                 self.fps_bg.remove_flag(lv.obj.FLAG.HIDDEN)
             else:
                 self.fps_bg.add_flag(lv.obj.FLAG.HIDDEN)
@@ -364,8 +367,10 @@ class QuasiBird(Activity):
         delta_time = delta_ms / 1000.0  # Convert to seconds
         self.last_time = current_time
 
-        if self.show_fps:
+        if self.show_fps == 1:
             self.fps_label.set_text(f"{self.last_fps} FPS")
+        elif self.show_fps == 2:
+            self.fps_label.set_text(f"{round(self.average_fps)} FPS")
 
         if not self.game_started or self.game_over:
             return
@@ -448,6 +453,23 @@ class QuasiBird(Activity):
 
             self.game_over_label.remove_flag(lv.obj.FLAG.HIDDEN)
 
+    average_samples = 20
+    buffer = [0.0] * average_samples
+    index = 0
+    sum = 0.0
+    count = 0  # Number of valid samples (0 to average_samples)
+    def moving_average(self, value):
+        # Subtract the value being overwritten (if buffer is full)
+        if self.count == self.average_samples:
+            self.sum -= self.buffer[self.index]
+        else:
+            self.count += 1
+        # Add new value
+        self.sum += value
+        self.buffer[self.index] = value
+        # Advance index
+        self.index = (self.index + 1) % self.average_samples
+        return self.sum / self.count
 
     # Custom log callback to capture FPS
     def log_callback(self, level, log_str):
@@ -461,6 +483,7 @@ class QuasiBird(Activity):
                 # Extract FPS value (e.g., "25" from "sysmon: 25 FPS ...")
                 fps_part = log_str.split("FPS")[0].split("sysmon:")[1].strip()
                 self.last_fps = int(fps_part)
-                print("Current FPS:", self.last_fps)
+                self.average_fps = self.moving_average(self.last_fps)
+                print(f"Current FPS: {self.last_fps} - Average 10 FPS: {self.average_fps}")
             except (IndexError, ValueError):
                 pass
