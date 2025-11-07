@@ -75,7 +75,7 @@ class QuasiBird(Activity):
     highscore_bg = None
     game_over_label = None
     start_label = None
-    fps_buffer = [0]  # To store the latest FPS value
+    last_fps = 0  # To store the latest FPS value
     fps_label = None
     fps_bg = None
 
@@ -189,19 +189,19 @@ class QuasiBird(Activity):
 
         # Create FPS  display (bottom left, with frame background)
         self.fps_bg = lv.obj(self.screen)
-        self.fps_bg.set_size(80, 50)
+        self.fps_bg.set_size(55, 20)
         self.fps_bg.set_style_bg_color(lv.color_hex(0x000000), 0)  # Black background
         self.fps_bg.set_style_bg_opa(180, 0)  # Semi-transparent
         self.fps_bg.set_style_border_color(lv.color_hex(0xFFFFFF), 0)  # White border
         self.fps_bg.set_style_border_width(2, 0)
         self.fps_bg.set_style_radius(8, 0)  # Rounded corners
         self.fps_bg.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)  # Disable scrollbar
-        self.fps_bg.align(lv.ALIGN.BOTTOM_LEFT, 10, -10)
+        self.fps_bg.align(lv.ALIGN.BOTTOM_LEFT, 8, -8)
         self.fps_bg.add_flag(lv.obj.FLAG.HIDDEN)
         self.fps_label = lv.label(self.fps_bg)
-        self.fps_label.set_text("0")
-        self.fps_label.set_style_text_font(lv.font_montserrat_32, 0)
-        self.fps_label.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
+        self.fps_label.set_text("0 FPS")
+        self.fps_label.set_style_text_font(lv.font_montserrat_12, 0)
+        self.fps_label.set_style_text_color(lv.color_hex(0x00FF00), 0)
         self.fps_label.center()
 
         # Create start instruction label
@@ -365,7 +365,7 @@ class QuasiBird(Activity):
         self.last_time = current_time
 
         if self.show_fps:
-            self.fps_label.set_text(str(self.fps_buffer[0]))
+            self.fps_label.set_text(f"{self.last_fps} FPS")
 
         if not self.game_started or self.game_over:
             return
@@ -460,8 +460,7 @@ class QuasiBird(Activity):
             try:
                 # Extract FPS value (e.g., "25" from "sysmon: 25 FPS ...")
                 fps_part = log_str.split("FPS")[0].split("sysmon:")[1].strip()
-                fps = int(fps_part)
-                print("Current FPS:", fps)
-                self.fps_buffer[0] = fps
+                self.last_fps = int(fps_part)
+                print("Current FPS:", self.last_fps)
             except (IndexError, ValueError):
                 pass
