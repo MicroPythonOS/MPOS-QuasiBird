@@ -4,6 +4,7 @@ import random
 from mpos.apps import Activity
 import mpos.ui
 import mpos.config
+from mpos.ui.focus_direction import emulate_focus_obj
 
 try:
     import lvgl as lv # pyright: ignore[reportMissingModuleSource]
@@ -326,6 +327,14 @@ class QuasiBird(Activity):
         no_label.set_text("No")
         no_label.center()
 
+        # Add buttons to focus group and set focus on "No" button
+        focusgroup = lv.group_get_default()
+        if focusgroup:
+            focusgroup.add_obj(yes_btn)
+            focusgroup.add_obj(no_btn)
+            # Set focus on the "No" button by default
+            emulate_focus_obj(focusgroup, no_btn)
+
     def on_delete_yes(self, event):
         """Handle Yes button - delete highscore"""
         # Reset highscore to 0
@@ -349,10 +358,15 @@ class QuasiBird(Activity):
 
     def close_popup(self):
         """Close the popup and unpause the game"""
-        # Delete modal
+        # Delete modal (this also removes buttons from focus group automatically)
         if self.popup_modal:
             self.popup_modal.delete()
             self.popup_modal = None
+
+        # Refocus on the screen
+        focusgroup = lv.group_get_default()
+        if focusgroup:
+            emulate_focus_obj(focusgroup, self.screen)
 
         # Unpause game
         self.game_paused = False
