@@ -250,7 +250,9 @@ class QuasiBird(Activity):
         if (fps_left <= tap_x <= fps_right and fps_top <= tap_y <= fps_bottom):
             # Toggle FPS display
             self.toggle_fps()
-        elif not self.game_started:
+
+        # Always handle the tap as a normal game action
+        if not self.game_started:
             self.start_game()
         elif self.game_over:
             self.restart_game()
