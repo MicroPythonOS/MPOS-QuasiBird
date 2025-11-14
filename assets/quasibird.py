@@ -213,7 +213,10 @@ class QuasiBird(Activity):
 
         # Create start instruction label
         self.start_label = lv.label(self.screen)
-        self.start_label.set_text("Tap to Start!")
+        helptext = "Tap to start!\n\nTop left to reset high score,\nbottom left to show FPS."
+        if "fri3d" in mpos.info.get_hardware_id():
+            helptext = "Press A to start!\n\nY to reset high score,\nB to show FPS."
+        self.start_label.set_text(helptext)
         self.start_label.set_style_text_font(lv.font_montserrat_20, 0)
         self.start_label.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
         self.start_label.align(lv.ALIGN.CENTER, 0, 0)
