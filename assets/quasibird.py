@@ -1,8 +1,7 @@
 import time
 import random
 
-from mpos import Activity, DisplayMetrics, SharedPreferences
-from mpos.ui import task_handler
+from mpos import Activity, DeviceInfo, DisplayMetrics, SharedPreferences
 from mpos.ui.focus_direction import emulate_focus_obj
 
 try:
@@ -27,8 +26,8 @@ class QuasiBird(Activity):
     ASSET_PATH = "M:apps/com.quasikili.quasibird/assets/"
 
     # Screen dimensions
-    SCREEN_WIDTH = 320
-    SCREEN_HEIGHT = 240
+    SCREEN_WIDTH = DisplayMetrics.width()
+    SCREEN_HEIGHT = DisplayMetrics.height()
 
     # Game physics constants
     GRAVITY = 200  # pixels per second^2
@@ -67,6 +66,7 @@ class QuasiBird(Activity):
     show_fps = 0 # 0 means off, 1 means current, 2 means average
     game_paused = False  # Track if game is paused
     popup_modal = None  # Reference to popup modal background
+    update_timer = None  # Reference to LVGL timer for frame updates
 
     # Timing for framerate independence
     last_time = 0
@@ -220,7 +220,7 @@ class QuasiBird(Activity):
         # Create start instruction label
         self.start_label = lv.label(self.screen)
         helptext = "Tap to start!\n\nTop left to reset high score,\nbottom left to show FPS."
-        if "fri3d" in mpos.info.get_hardware_id():
+        if "fri3d" in DeviceInfo.get_hardware_id():
             helptext = "Press A to start!\n\nY to reset high score,\nB to show FPS."
         self.start_label.set_text(helptext)
         self.start_label.set_style_text_font(lv.font_montserrat_20, 0)
@@ -241,10 +241,13 @@ class QuasiBird(Activity):
 
     def onResume(self, screen): # Activity goes foreground
         lv.log_register_print_cb(self.log_callback)
-        task_handler.add_event_cb(self.update_frame, task_handler.TASK_HANDLER_STARTED)
+        self.update_timer = lv.timer_create(self.update_frame, 16, None) # max 60 fps = 16ms/frame
 
     def onPause(self, screen): # Activity goes background
-        task_handler.remove_event_cb(self.update_frame)
+        # Delete the timer
+        if self.update_timer:
+            self.update_timer.delete()
+            self.update_timer = None
         lv.log_register_print_cb(None)
 
     def on_tap(self, event):
@@ -496,7 +499,7 @@ class QuasiBird(Activity):
 
         return False
 
-    def update_frame(self, a, b):
+    def update_frame(self, timer):
         """Main game loop with framerate-independent physics"""
 
         current_time = time.ticks_ms()
