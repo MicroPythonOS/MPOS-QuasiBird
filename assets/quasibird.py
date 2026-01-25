@@ -1,8 +1,7 @@
 import time
 import random
 
-from mpos import Activity, DeviceInfo, DisplayMetrics, SharedPreferences
-from mpos.ui.focus_direction import emulate_focus_obj
+from mpos import Activity, DeviceInfo, DisplayMetrics, InputManager, SharedPreferences
 
 try:
     import lvgl as lv # pyright: ignore[reportMissingModuleSource]
@@ -253,7 +252,7 @@ class QuasiBird(Activity):
     def on_tap(self, event):
         """Handle tap/click events"""
         # Get tap coordinates
-        tap_x, tap_y = DisplayMetrics.pointer_xy()
+        tap_x, tap_y = InputManager.pointer_xy()
 
         # Check if tap is in the FPS area (bottom left corner)
         # FPS background is 55x20 at position (8, SCREEN_HEIGHT - 8 - 20)
@@ -360,7 +359,7 @@ class QuasiBird(Activity):
             focusgroup.add_obj(yes_btn)
             focusgroup.add_obj(no_btn)
             # Set focus on the "No" button by default
-            emulate_focus_obj(focusgroup, no_btn)
+            InputManager.emulate_focus_obj(focusgroup, no_btn)
 
     def on_delete_yes(self, event):
         """Handle Yes button - delete highscore"""
@@ -393,7 +392,7 @@ class QuasiBird(Activity):
         # Refocus on the screen
         focusgroup = lv.group_get_default()
         if focusgroup:
-            emulate_focus_obj(focusgroup, self.screen)
+            InputManager.emulate_focus_obj(focusgroup, self.screen)
 
         # Unpause game
         self.game_paused = False
