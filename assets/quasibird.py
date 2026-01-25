@@ -1,7 +1,7 @@
 import time
 import random
 
-from mpos import Activity, DeviceInfo, DisplayMetrics, InputManager, SharedPreferences
+from mpos import Activity, DisplayMetrics, InputManager, SharedPreferences
 
 try:
     import lvgl as lv # pyright: ignore[reportMissingModuleSource]
@@ -219,7 +219,7 @@ class QuasiBird(Activity):
         # Create start instruction label
         self.start_label = lv.label(self.screen)
         helptext = "Tap to start!\n\nTop left to reset high score,\nbottom left to show FPS."
-        if "fri3d" in DeviceInfo.get_hardware_id():
+        if InputManager.has_indev_type(lv.INDEV_TYPE.KEYPAD):
             helptext = "Press A to start!\n\nY to reset high score,\nB to show FPS."
         self.start_label.set_text(helptext)
         self.start_label.set_style_text_font(lv.font_montserrat_20, 0)
@@ -286,7 +286,7 @@ class QuasiBird(Activity):
     def on_key(self, event):
         """Handle keyboard input"""
         key = event.get_key()
-        if key == lv.KEY.ENTER or key == lv.KEY.UP:
+        if key == lv.KEY.ENTER or key == lv.KEY.UP or key == ord("A") or key == ord("a"):
             if not self.game_started:
                 self.start_game()
             elif self.game_over:
