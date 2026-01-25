@@ -1,9 +1,8 @@
 import time
 import random
 
-import mpos.config
-from mpos import Activity
-from mpos.ui import task_handler, get_pointer_xy
+from mpos import Activity, DisplayMetrics, SharedPreferences
+from mpos.ui import task_handler
 from mpos.ui.focus_direction import emulate_focus_obj
 
 try:
@@ -95,7 +94,7 @@ class QuasiBird(Activity):
 
         # Load highscore from persistent storage
         print("Loading preferences...")
-        prefs = mpos.config.SharedPreferences("com.quasikili.quasibird")
+        prefs = SharedPreferences("com.quasikili.quasibird")
         self.highscore = prefs.get_int("highscore", 0)
         print(f"Loaded highscore: {self.highscore}")
 
@@ -251,7 +250,7 @@ class QuasiBird(Activity):
     def on_tap(self, event):
         """Handle tap/click events"""
         # Get tap coordinates
-        tap_x, tap_y = get_pointer_xy()
+        tap_x, tap_y = DisplayMetrics.pointer_xy()
 
         # Check if tap is in the FPS area (bottom left corner)
         # FPS background is 55x20 at position (8, SCREEN_HEIGHT - 8 - 20)
@@ -369,7 +368,7 @@ class QuasiBird(Activity):
 
         # Save to persistent storage
         print("Highscore deleted, saving...")
-        editor = mpos.config.SharedPreferences("com.quasikili.quasibird").edit()
+        editor = SharedPreferences("com.quasikili.quasibird").edit()
         editor.put_int("highscore", 0)
         editor.commit()
 
@@ -585,7 +584,7 @@ class QuasiBird(Activity):
 
                 # Save new highscore to persistent storage
                 print(f"New highscore: {self.highscore}! Saving...")
-                editor = mpos.config.SharedPreferences("com.quasikili.quasibird").edit()
+                editor = SharedPreferences("com.quasikili.quasibird").edit()
                 editor.put_int("highscore", self.highscore)
                 editor.commit()
 
