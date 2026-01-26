@@ -98,7 +98,7 @@ class QuasiBird(Activity):
         print(f"Loaded highscore: {self.highscore}")
 
         self.screen = lv.obj()
-        self.screen.set_style_bg_color(lv.color_hex(0x87CEEB), 0)  # Sky blue
+        self.screen.set_style_bg_color(lv.color_hex(0x87CEEB), lv.PART.MAIN)  # Sky blue
         self.screen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
         self.screen.remove_flag(lv.obj.FLAG.SCROLLABLE)  # Disable scrolling completely
 
@@ -146,9 +146,9 @@ class QuasiBird(Activity):
             top_pipe.set_rotation(1800)  # 180 degrees * 10
 
             # Alternative: use style transform rotation for 180 degree flip and pivot
-            # top_pipe.set_style_transform_rotation(1800, 0)  # 180 degrees * 10
-            # top_pipe.set_style_transform_pivot_x(20, 0)  # Center X (pipe is 40px wide)
-            # top_pipe.set_style_transform_pivot_y(100, 0)  # Center Y (pipe is 200px tall)
+            # top_pipe.set_style_transform_rotation(1800, lv.PART.MAIN)  # 180 degrees * 10
+             # top_pipe.set_style_transform_pivot_x(20, lv.PART.MAIN)  # Center X (pipe is 40px wide)
+             # top_pipe.set_style_transform_pivot_y(100, lv.PART.MAIN)  # Center Y (pipe is 200px tall)
 
             # you can also set width to stretch the image
             # top_pipe.set_width(200)
@@ -167,53 +167,53 @@ class QuasiBird(Activity):
         # Create score display (top right, with frame background)
         self.score_bg = lv.obj(self.screen)
         self.score_bg.set_size(60, 35)
-        self.score_bg.set_style_bg_color(lv.color_hex(0x000000), 0)  # Black background
-        self.score_bg.set_style_bg_opa(180, 0)  # Semi-transparent
-        self.score_bg.set_style_border_color(lv.color_hex(0xFFFFFF), 0)  # White border
-        self.score_bg.set_style_border_width(2, 0)
-        self.score_bg.set_style_radius(8, 0)  # Rounded corners
+        self.score_bg.set_style_bg_color(lv.color_hex(0x000000), lv.PART.MAIN)  # Black background
+        self.score_bg.set_style_bg_opa(180, lv.PART.MAIN)  # Semi-transparent
+        self.score_bg.set_style_border_color(lv.color_hex(0xFFFFFF), lv.PART.MAIN)  # White border
+        self.score_bg.set_style_border_width(2, lv.PART.MAIN)
+        self.score_bg.set_style_radius(8, lv.PART.MAIN)  # Rounded corners
         self.score_bg.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)  # Disable scrollbar
         self.score_bg.align(lv.ALIGN.TOP_RIGHT, -10, 10)
         self.score_label = lv.label(self.score_bg)
         self.score_label.set_text("0")
-        self.score_label.set_style_text_font(lv.font_montserrat_28_compressed, 0)
-        self.score_label.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
+        self.score_label.set_style_text_font(lv.font_montserrat_28_compressed, lv.PART.MAIN)
+        self.score_label.set_style_text_color(lv.color_hex(0xFFFFFF), lv.PART.MAIN)
         self.score_label.center()
 
         # Create highscore display (top left, with frame background)
         self.highscore_bg = lv.obj(self.screen)
         self.highscore_bg.set_size(60, 35)
-        self.highscore_bg.set_style_bg_color(lv.color_hex(0x000000), 0)  # Black background
-        self.highscore_bg.set_style_bg_opa(180, 0)  # Semi-transparent
-        self.highscore_bg.set_style_border_color(lv.color_hex(0xFFD700), 0)  # Gold border
-        self.highscore_bg.set_style_border_width(2, 0)
-        self.highscore_bg.set_style_radius(8, 0)  # Rounded corners
+        self.highscore_bg.set_style_bg_color(lv.color_hex(0x000000), lv.PART.MAIN)  # Black background
+        self.highscore_bg.set_style_bg_opa(180, lv.PART.MAIN)  # Semi-transparent
+        self.highscore_bg.set_style_border_color(lv.color_hex(0xFFD700), lv.PART.MAIN)  # Gold border
+        self.highscore_bg.set_style_border_width(2, lv.PART.MAIN)
+        self.highscore_bg.set_style_radius(8, lv.PART.MAIN)  # Rounded corners
         self.highscore_bg.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)  # Disable scrollbar
         self.highscore_bg.align(lv.ALIGN.TOP_LEFT, 10, 10)
         self.highscore_bg.add_flag(lv.obj.FLAG.CLICKABLE)  # Make it clickable
         self.highscore_bg.add_event_cb(self.on_highscore_tap, lv.EVENT.CLICKED, None)
         self.highscore_label = lv.label(self.highscore_bg)
         self.highscore_label.set_text(f"Hi:{self.highscore}")
-        self.highscore_label.set_style_text_font(lv.font_montserrat_20, 0)
-        self.highscore_label.set_style_text_color(lv.color_hex(0xFFD700), 0)  # Gold text
+        self.highscore_label.set_style_text_font(lv.font_montserrat_20, lv.PART.MAIN)
+        self.highscore_label.set_style_text_color(lv.color_hex(0xFFD700), lv.PART.MAIN)  # Gold text
         self.highscore_label.center()
 
         # Create FPS  display (bottom left, with frame background)
         self.fps_bg = lv.obj(self.screen)
         self.fps_bg.set_size(55, 20)
-        self.fps_bg.set_style_bg_color(lv.color_hex(0x000000), 0)  # Black background
-        self.fps_bg.set_style_bg_opa(180, 0)  # Semi-transparent
-        self.fps_bg.set_style_border_color(lv.color_hex(0xFFFFFF), 0)  # White border
-        self.fps_bg.set_style_border_width(2, 0)
-        self.fps_bg.set_style_radius(8, 0)  # Rounded corners
+        self.fps_bg.set_style_bg_color(lv.color_hex(0x000000), lv.PART.MAIN)  # Black background
+        self.fps_bg.set_style_bg_opa(180, lv.PART.MAIN)  # Semi-transparent
+        self.fps_bg.set_style_border_color(lv.color_hex(0xFFFFFF), lv.PART.MAIN)  # White border
+        self.fps_bg.set_style_border_width(2, lv.PART.MAIN)
+        self.fps_bg.set_style_radius(8, lv.PART.MAIN)  # Rounded corners
         self.fps_bg.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)  # Disable scrollbar
         self.fps_bg.align(lv.ALIGN.BOTTOM_LEFT, 8, -8)
         self.fps_bg.add_flag(lv.obj.FLAG.HIDDEN)
         self.fps_bg.remove_flag(lv.obj.FLAG.CLICKABLE)  # Allow clicks to pass through to screen
         self.fps_label = lv.label(self.fps_bg)
         self.fps_label.set_text("0 FPS")
-        self.fps_label.set_style_text_font(lv.font_montserrat_12, 0)
-        self.fps_label.set_style_text_color(lv.color_hex(0x00FF00), 0)
+        self.fps_label.set_style_text_font(lv.font_montserrat_12, lv.PART.MAIN)
+        self.fps_label.set_style_text_color(lv.color_hex(0x00FF00), lv.PART.MAIN)
         self.fps_label.center()
 
         # Create start instruction label
@@ -222,16 +222,16 @@ class QuasiBird(Activity):
         if InputManager.has_indev_type(lv.INDEV_TYPE.KEYPAD):
             helptext = "Press A to start!\n\nY to reset high score,\nB to show FPS."
         self.start_label.set_text(helptext)
-        self.start_label.set_style_text_font(lv.font_montserrat_20, 0)
-        self.start_label.set_style_text_color(lv.color_hex(0xFFFFFF), 0)
+        self.start_label.set_style_text_font(lv.font_montserrat_20, lv.PART.MAIN)
+        self.start_label.set_style_text_color(lv.color_hex(0xFFFFFF), lv.PART.MAIN)
         self.start_label.align(lv.ALIGN.CENTER, 0, 0)
 
         # Create game over label (hidden initially)
         self.game_over_label = lv.label(self.screen)
         self.game_over_label.set_text("Game Over!\nTap to Restart")
-        self.game_over_label.set_style_text_font(lv.font_montserrat_20, 0)
-        self.game_over_label.set_style_text_color(lv.color_hex(0xFF0000), 0)
-        self.game_over_label.set_style_text_align(lv.TEXT_ALIGN.CENTER, 0)
+        self.game_over_label.set_style_text_font(lv.font_montserrat_20, lv.PART.MAIN)
+        self.game_over_label.set_style_text_color(lv.color_hex(0xFF0000), lv.PART.MAIN)
+        self.game_over_label.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
         self.game_over_label.align(lv.ALIGN.CENTER, 0, 0)
         self.game_over_label.add_flag(lv.obj.FLAG.HIDDEN)
 
@@ -314,25 +314,25 @@ class QuasiBird(Activity):
         # Create modal background (semi-transparent overlay)
         self.popup_modal = lv.obj(lv.layer_top())
         self.popup_modal.set_size(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
-        self.popup_modal.set_style_bg_color(lv.color_hex(0x000000), 0)
-        self.popup_modal.set_style_bg_opa(150, 0)  # Semi-transparent
-        self.popup_modal.set_style_border_width(0, 0)
+        self.popup_modal.set_style_bg_color(lv.color_hex(0x000000), lv.PART.MAIN)
+        self.popup_modal.set_style_bg_opa(150, lv.PART.MAIN)  # Semi-transparent
+        self.popup_modal.set_style_border_width(0, lv.PART.MAIN)
         self.popup_modal.set_pos(0, 0)
 
         # Create popup container
         popup = lv.obj(self.popup_modal)
         popup.set_size(200, 120)
-        popup.set_style_bg_color(lv.color_hex(0xFFFFFF), 0)
-        popup.set_style_border_color(lv.color_hex(0x000000), 0)
-        popup.set_style_border_width(3, 0)
-        popup.set_style_radius(10, 0)
+        popup.set_style_bg_color(lv.color_hex(0xFFFFFF), lv.PART.MAIN)
+        popup.set_style_border_color(lv.color_hex(0x000000), lv.PART.MAIN)
+        popup.set_style_border_width(3, lv.PART.MAIN)
+        popup.set_style_radius(10, lv.PART.MAIN)
         popup.center()
 
         # Create question label
         question = lv.label(popup)
         question.set_text("Delete high score?")
-        question.set_style_text_color(lv.color_hex(0x000000), 0)
-        question.set_style_text_font(lv.font_montserrat_16, 0)
+        question.set_style_text_color(lv.color_hex(0x000000), lv.PART.MAIN)
+        question.set_style_text_font(lv.font_montserrat_16, lv.PART.MAIN)
         question.align(lv.ALIGN.TOP_MID, 0, 15)
 
         # Create Yes button
