@@ -66,6 +66,8 @@ class QuasiBird(Activity):
     game_paused = False  # Track if game is paused
     popup_modal = None  # Reference to popup modal background
     update_timer = None  # Reference to LVGL timer for frame updates
+    game_over_time = 0 # Time when game over occurred
+    ghost_bird_float_velocity = -20 # Pixels per second for ghost bird to float up
 
     # Timing for framerate independence
     last_time = 0
@@ -266,6 +268,10 @@ class QuasiBird(Activity):
             self.toggle_fps()
 
         # Always handle the tap as a normal game action
+        if self.game_over and (time.ticks_ms() - self.game_over_time) < 2000:
+            # Input is disabled for 2 seconds after game over
+            return
+
         if not self.game_started:
             self.start_game()
         elif self.game_over:
@@ -289,9 +295,9 @@ class QuasiBird(Activity):
         if key == lv.KEY.ENTER or key == lv.KEY.UP or key == ord("A") or key == ord("a"):
             if not self.game_started:
                 self.start_game()
-            elif self.game_over:
+            elif self.game_over and (time.ticks_ms() - self.game_over_time) >= 2000:
                 self.restart_game()
-            else:
+            elif not self.game_over:
                 self.flap()
         elif key == ord("B") or key == ord("b"):
             self.toggle_fps()
@@ -407,6 +413,7 @@ class QuasiBird(Activity):
         self.game_paused = False
         self.score = 0
         self.is_fire_bird = False  # Reset to normal bird
+        self.game_over_time = 0 # Reset game over time
 
         # Switch back to normal bird sprite
         self.bird_img.set_src(f"{self.ASSET_PATH}bird.png")
@@ -440,6 +447,7 @@ class QuasiBird(Activity):
         """Restart after game over"""
         # Hide game over label
         self.game_over_label.add_flag(lv.obj.FLAG.HIDDEN)
+        self.game_over_time = 0 # Reset game over time
 
         # Start new game
         self.start_game()
@@ -511,7 +519,13 @@ class QuasiBird(Activity):
         elif self.show_fps == 2:
             self.fps_label.set_text(f"FPS:{round(self.average_fps)}")
 
-        if not self.game_started or self.game_over or self.game_paused:
+        if not self.game_started or self.game_paused:
+            return
+
+        if self.game_over:
+            # Make the gray bird float upwards
+            self.bird_y += self.ghost_bird_float_velocity * delta_time
+            self.bird_img.set_y(int(self.bird_y))
             return
 
         # Update physics
@@ -576,6 +590,10 @@ class QuasiBird(Activity):
         # Check collision
         if self.check_collision():
             self.game_over = True
+            self.game_over_time = current_time # Record game over time
+
+            # Change bird sprite to gray
+            self.bird_img.set_src(f"{self.ASSET_PATH}gray_bird.png")
 
             # Update highscore if beaten
             if self.score > self.highscore:

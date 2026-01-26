@@ -108,6 +108,32 @@ draw.polygon(beak, fill=COLORS["dark_orange"], outline=COLORS["red_orange"], wid
 fire_bird.save('assets/fire_bird.png', 'PNG', optimize=True)
 print("Fire bird sprite saved: assets/fire_bird.png")
 
+# 2c. Create gray bird sprite (32x32)
+def create_gray_bird(size=(32, 32), filename='assets/gray_bird.png'):
+    gray_bird = Image.new('RGBA', size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(gray_bird)
+
+    # Draw bird body (light gray)
+    draw.ellipse([(4, 6), (25, 27)], fill=COLORS["light_gray"], outline=COLORS["silver_gray"], width=1)
+
+    # Draw wing (silver gray)
+    draw.ellipse([(7, 17), (20, 25)], fill=COLORS["silver_gray"], outline=COLORS["dark_blue_gray"], width=1)
+
+    # Draw eye (white with black pupil)
+    draw.ellipse([(16, 11), (21, 16)], fill=COLORS["white"], outline=COLORS["black"], width=1)
+    draw.ellipse([(18, 13), (19, 14)], fill=COLORS["black"])
+
+    # Draw beak (light gray with silver gray outline)
+    beak = [(22, 17), (28, 17), (24, 20)]
+    draw.polygon(beak, fill=COLORS["light_gray"], outline=COLORS["silver_gray"], width=1)
+    beak = [(22, 17), (28, 17), (24, 14)]
+    draw.polygon(beak, fill=COLORS["light_gray"], outline=COLORS["silver_gray"], width=1)
+
+    gray_bird.save(filename, 'PNG', optimize=True)
+    print(f"Gray bird sprite saved: {filename}")
+
+create_gray_bird()
+
 # 3. Create pipe sprite (40x200)
 pipe = Image.new('RGBA', (40, 200), (0, 0, 0, 0))
 draw = ImageDraw.Draw(pipe)
