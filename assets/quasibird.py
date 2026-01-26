@@ -613,6 +613,7 @@ class QuasiBird(Activity):
             # Show the ghost bird at the original bird's position
             self.ghost_bird_img.set_pos(self.BIRD_X, int(self.bird_y))
             self.ghost_bird_img.remove_flag(lv.obj.FLAG.HIDDEN)
+            self.ghost_bird_img.move_foreground()
 
             # Update highscore if beaten
             if self.score > self.highscore:
