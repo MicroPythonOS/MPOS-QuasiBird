@@ -185,7 +185,11 @@ class QuasiBird(Activity):
         self.score_bg.align(lv.ALIGN.TOP_RIGHT, -10, 10)
         self.score_label = lv.label(self.score_bg)
         self.score_label.set_text("0")
-        self.score_label.set_style_text_font(lv.font_montserrat_28_compressed, lv.PART.MAIN)
+        try:
+            self.score_label.set_style_text_font(lv.font_montserrat_28, lv.PART.MAIN)
+        except Exception as e:
+            print("Falling back to old lv.font_montserrat_28_compressed - please update to MicroPythonOS 0.9.3 or newer!")
+            self.score_label.set_style_text_font(lv.font_montserrat_28_compressed, lv.PART.MAIN)
         self.score_label.set_style_text_color(lv.color_hex(0xFFFFFF), lv.PART.MAIN)
         self.score_label.center()
 
