@@ -85,9 +85,12 @@ class QuasiBird(Activity):
     ghost_bird_img = None # New instance variable for the ghost bird
     pipe_images = []
     MAX_PIPES = 4  # Maximum number of pipe pairs to display
-    ground_img = None
-    ground_fp = 0  # milli-pixels scrolled (positive)
-    _last_ground_off = None  # last offset sent to LVGL, to skip redundant invalidates
+    ground_a = None  # ping-pong strip images (None when using tiled fallback)
+    ground_b = None
+    ground_tiled = None  # TILE-mode fallback for screens wider than 240px
+    ground_fp = 0  # milli-pixels scrolled, kept modulo one screen width
+    _last_ground_off = None  # last offset sent to tiled fallback, to skip redundant invalidates
+    _frame_no = 0  # update_frame counter (clouds refresh on even frames)
     score_label = None
     score_bg = None
     highscore_label = None
@@ -128,13 +131,26 @@ class QuasiBird(Activity):
         self.screen.add_event_cb(self.on_tap, lv.EVENT.CLICKED, None)
         self.screen.add_event_cb(self.on_key, lv.EVENT.KEY, None)
 
-        # Create ground (will be scrolling with tiling)
-        self.ground_img = lv.image(self.screen)
-        self.ground_img.set_src(f"{self.ASSET_PATH}ground.png")
-        self.ground_img.set_size(self.SCREEN_WIDTH, self.GROUND_HEIGHT)  # Set size larger than image
-
-        self.ground_img.set_inner_align(lv.image.ALIGN.TILE)
-        self.ground_img.set_pos(0, self.SCREEN_HEIGHT - self.GROUND_HEIGHT)
+        # Create scrolling ground: two 240px strip images leapfrogging via
+        # set_x (1 draw call each, opaque fast path) instead of one TILE-mode
+        # object (12 draw calls per frame for the 20px tile). Falls back to
+        # tiling on screens the strip asset can't cover.
+        _gy = self.SCREEN_HEIGHT - self.GROUND_HEIGHT
+        if self.SCREEN_WIDTH == 240:
+            self.ground_a = lv.image(self.screen)
+            self.ground_a.set_src(f"{self.ASSET_PATH}ground_strip.png")
+            self.ground_a.set_size(self.SCREEN_WIDTH, self.GROUND_HEIGHT)
+            self.ground_a.set_pos(0, _gy)
+            self.ground_b = lv.image(self.screen)
+            self.ground_b.set_src(f"{self.ASSET_PATH}ground_strip.png")
+            self.ground_b.set_size(self.SCREEN_WIDTH, self.GROUND_HEIGHT)
+            self.ground_b.set_pos(self.SCREEN_WIDTH, _gy)
+        else:
+            self.ground_tiled = lv.image(self.screen)
+            self.ground_tiled.set_src(f"{self.ASSET_PATH}ground.png")
+            self.ground_tiled.set_size(self.SCREEN_WIDTH, self.GROUND_HEIGHT)  # Set size larger than image
+            self.ground_tiled.set_inner_align(lv.image.ALIGN.TILE)
+            self.ground_tiled.set_pos(0, _gy)
 
         # Create clouds for parallax scrolling (behind bird, in front of sky)
         cloud_start_positions = [
@@ -442,6 +458,12 @@ class QuasiBird(Activity):
         self.bird_vel_fp = 0
         self.ground_fp = 0
         self._last_ground_off = None
+        if self.ground_a is not None:
+            self.ground_a.set_x(0)
+            self.ground_b.set_x(self.SCREEN_WIDTH)
+        elif self.ground_tiled is not None:
+            self.ground_tiled.set_offset_x(0)
+        self._frame_no = 0
         self._game_over_final_shown = False
         self.pipes = []
         self.last_time = time.ticks_ms()
@@ -583,7 +605,12 @@ class QuasiBird(Activity):
         # Update bird position
         self.bird_img.set_y(self.bird_y_fp // self._FP)
 
-        # Update cloud parallax scrolling (slower than pipes for depth)
+        # Update cloud parallax scrolling (slower than pipes for depth).
+        # Physics runs every frame so trajectories stay exact, but the LVGL
+        # position (and its invalidate + alpha blend + sky repaint) refreshes
+        # on even frames only: 30px/s is ~0.5px/frame, invisible either way.
+        self._frame_no += 1
+        show_clouds = (self._frame_no & 1) == 0
         for i, cloud_img in enumerate(self.cloud_images):
             self.cloud_positions[i] -= self.CLOUD_SPEED_FP * delta_ms // self._FP
 
@@ -592,7 +619,8 @@ class QuasiBird(Activity):
                 self.cloud_positions[i] = (self.SCREEN_WIDTH + 20) * self._FP
 
             # Update cloud position
-            cloud_img.set_x(self.cloud_positions[i] // self._FP)
+            if show_clouds:
+                cloud_img.set_x(self.cloud_positions[i] // self._FP)
 
         # Update pipes
         for pipe in self.pipes:
@@ -630,15 +658,24 @@ class QuasiBird(Activity):
         # Update pipe image positions and visibility
         self.update_pipe_images()
 
-        # Update ground scrolling (using tiling with offset). set_offset_x()
-        # invalidates the whole 240x40 strip unconditionally, so skip it when
-        # the pixel offset didn't advance since last frame.
-        self.ground_fp += self.PIPE_SPEED_FP * delta_ms // self._FP
-        # No need to reset - tiling handles wrapping automatically
-        ground_off = -(self.ground_fp // self._FP)
-        if ground_off != self._last_ground_off:
-            self._last_ground_off = ground_off
-            self.ground_img.set_offset_x(ground_off)
+        # Update ground scrolling. ground_fp stays bounded (modulo one screen
+        # width) so it never outgrows MicroPython small ints in long sessions.
+        self.ground_fp = (self.ground_fp + self.PIPE_SPEED_FP * delta_ms // self._FP) % (self.SCREEN_WIDTH * self._FP)
+        phase = self.ground_fp // self._FP
+        if self.ground_tiled is not None:
+            # set_offset_x() invalidates the whole strip unconditionally, so
+            # skip it when the pixel offset didn't advance since last frame.
+            # No need to reset - tiling handles wrapping automatically
+            ground_off = -(self.ground_fp // self._FP)
+            if ground_off != self._last_ground_off:
+                self._last_ground_off = ground_off
+                self.ground_tiled.set_offset_x(ground_off)
+        else:
+            # Two leapfrogging strips: identical pixels to the tiled ground
+            # at every phase, 1 draw call each instead of 12 tiled ones.
+            # set_x() is a no-op when the pixel didn't change.
+            self.ground_a.set_x(-phase)
+            self.ground_b.set_x(self.SCREEN_WIDTH - phase)
 
         # Check collision
         if self.check_collision():
