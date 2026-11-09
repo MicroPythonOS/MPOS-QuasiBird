@@ -76,6 +76,12 @@ class QuasiBird(Activity):
     game_over_time = 0 # Time when game over occurred
     GHOST_VEL_FP = -20 * _FP  # milli-pixels per second for ghost bird to float up
 
+    # Set by on_key when B/Y arrive as ord letters, consumed by
+    # update_frame to undo the focus move LVGL performs for the NEXT/PREV
+    # key the Fri3d 2026 badge also generates for those buttons.
+    _need_refocus = False
+    _popup_default_btn = None  # No button of the delete-highscore popup
+
     # Timing for framerate independence
     last_time = 0
 
@@ -106,6 +112,9 @@ class QuasiBird(Activity):
 
     def onCreate(self):
         print("Quasi Bird starting...")
+
+        self._need_refocus = False
+        self._popup_default_btn = None
 
         # Load highscore from persistent storage
         print("Loading preferences...")
@@ -321,8 +330,35 @@ class QuasiBird(Activity):
         else:
             self.fps_bg.add_flag(lv.obj.FLAG.HIDDEN)
 
+    def _repair_focus(self):
+        """Refocus after a B/Y press moved LVGL focus away.
+
+        The Fri3d 2026 badge reports B/Y as lv.KEY.NEXT/PREV on top of the
+        ord letter delivered to on_key, so every handled press also tabs
+        focus elsewhere. Repair it on the next frame: the popup default
+        button while the delete-highscore popup is open, else the screen.
+        """
+        try:
+            focusgroup = lv.group_get_default()
+            if focusgroup is None:
+                return
+            if self.popup_modal is not None:
+                target = self._popup_default_btn
+            else:
+                target = self.screen
+            if target is not None:
+                lv.group_focus_obj(target)
+        except Exception:
+            pass
+
     def on_key(self, event):
-        """Handle keyboard input"""
+        """Handle keyboard input.
+
+        B/Y arrive here as ord letters on desktop SDL, the Fri3d 2024
+        badge, and (via dual delivery in Fri3d2026Expander) the Fri3d 2026
+        badge. On 2026 they additionally tab focus, repaired by
+        _repair_focus() on the next frame.
+        """
         key = event.get_key()
         if key == lv.KEY.ENTER or key == lv.KEY.UP or key == ord("A") or key == ord("a"):
             if not self.game_started:
@@ -333,13 +369,17 @@ class QuasiBird(Activity):
                 self.flap()
         elif key == ord("B") or key == ord("b"):
             self.toggle_fps()
+            self._need_refocus = True
         elif key == ord("Y") or key == ord("y"):
             self.on_highscore_tap(event)
+            self._need_refocus = True
         else:
             print(f"on_key: unhandled key {key}")
 
     def on_highscore_tap(self, event):
         """Handle tap on highscore label"""
+        if self.popup_modal is not None:
+            return
         if self.game_started and not self.game_over:
             # Pause the game
             self.game_paused = True
@@ -398,6 +438,7 @@ class QuasiBird(Activity):
             focusgroup.add_obj(no_btn)
             # Set focus on the "No" button by default
             InputManager.emulate_focus_obj(focusgroup, no_btn)
+        self._popup_default_btn = no_btn
 
     def on_delete_yes(self, event):
         """Handle Yes button - delete highscore"""
@@ -426,6 +467,7 @@ class QuasiBird(Activity):
         if self.popup_modal:
             self.popup_modal.delete()
             self.popup_modal = None
+        self._popup_default_btn = None
 
         # Refocus on the screen
         focusgroup = lv.group_get_default()
@@ -582,6 +624,13 @@ class QuasiBird(Activity):
             if fps_text != self._last_fps_text:
                 self._last_fps_text = fps_text
                 self.fps_label.set_text(fps_text)
+
+        # Repair LVGL focus after a handled B/Y press tabbed it away
+        # (fri3d 2026 NEXT/PREV). Runs before the game-state gate so the
+        # start screen and the popup benefit too.
+        if self._need_refocus:
+            self._need_refocus = False
+            self._repair_focus()
 
         if not self.game_started or self.game_paused:
             return
